@@ -6,6 +6,7 @@ REF="${REF:-main}"
 APP_DIR="${APP_DIR:-/opt/mydigital-bot}"
 CONF_DIR="${CONF_DIR:-/home/feiyangdigitalbotconf}"
 TMP_DIR="$(mktemp -d)"
+BACKUP=""
 
 cleanup() {
   rm -rf "$TMP_DIR"
@@ -65,6 +66,12 @@ if [ -d "$APP_DIR" ]; then
 fi
 mkdir -p "$(dirname "$APP_DIR")"
 mv "$SRC_DIR" "$APP_DIR"
+
+if [ -n "$BACKUP" ] && [ -f "$BACKUP/.env" ]; then
+  cp "$BACKUP/.env" "$APP_DIR/.env"
+  chmod 600 "$APP_DIR/.env"
+  echo "Restored existing $APP_DIR/.env"
+fi
 
 if [ ! -f "$APP_DIR/.env" ]; then
   cat > "$APP_DIR/.env" <<EOF
