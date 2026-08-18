@@ -1,94 +1,99 @@
+# Mydigital-bot Telegram 群管机器人
 
-🤖 Feiyang Digital Telegram 群管机器人
-===========================================
+这是从 `youshandefeiyang/feiyangdigital-bot` fork 后整理的自用部署版本。项目基于 Spring Boot、Telegrambot API、MySQL、Redis，可用于 Telegram 群组管理、关键词/正则处理、入群验证、频道马甲广告拦截、刷屏检测，并可选接入 DeepSeek 与 Google Cloud Vision 做 AI 文本和媒体审核。
 
-基于 **SpringBoot** 和 **Telegrambot-Api** 打造的多功能 Telegram 群管理机器人，有效查杀18+违规视频、贴图、图片，AI识别各种博彩，违规图片、文字，可设置正则自定义关键字回复、违规词汇删除等功能，支持每日词云统计，进群欢迎等多种实用群管功能，**Powered By DeepSeek And Google Cloud Vision**。
+## 部署方式
 
-1️⃣ 开始之前
-----------------
-# 强烈推荐观看保姆级部署视频教程：[点击观看](https://www.youtube.com/watch?v=QgrPRgR5tek)
-# 使用文档：[点击下载](https://pan.v1.mk/%E6%AF%8F%E6%9C%9F%E8%A7%86%E9%A2%91%E4%B8%AD%E7%94%A8%E5%88%B0%E7%9A%84%E6%96%87%E4%BB%B6%E5%88%86%E4%BA%AB/%E5%AF%86%E7%A0%81123-2023.09.25%E6%9C%9F.zip)
-- **创建你的 Telegram 机器人:**
-  1. 前往 [@BotFather](https://t.me/botfather) 以创建机器人。
-  2. 记录下机器人的 `token` 和用户名。
-  3. 不熟悉的话，可以[查阅此具体步骤](https://blog.csdn.net/whatday/article/details/113747294)。
+推荐直接部署在 VPS 上，用 Docker Compose 运行。默认使用 `longPolling` 模式，不需要域名，不需要公网 webhook，只要服务器能访问 Telegram API 即可。
 
-- **准备环境:**
-  - [安装 Docker 和 Docker-Compose](https://www.wxy97.com/archives/77)。
+你的 OVH SG VPS 配置足够运行本项目。首次建议只开放 SSH，不要把机器人 HTTP 端口暴露到公网。
 
-2️⃣ 终端运行
---------------
+## 一键准备
 
 ```bash
-curl -o start.sh https://ghproxy.com/https://raw.githubusercontent.com/youshandefeiyang/feiyangdigital-bot/main/start.sh && chmod +x start.sh && ./start.sh
+curl -fsSL -o start.sh https://raw.githubusercontent.com/sev7enshare/Mydigital-bot/main/start.sh
+chmod +x start.sh
+sudo ./start.sh
 ```
 
-3️⃣ 配置机器人
-----------------
+脚本会：
 
-- 前往 `/home/feiyangdigitalbotconf/` 目录，编辑 `conf.json` 文件：
-  1. 填入你的 `username` 和 `token` 到 `botConfig` 的 `name` 和 `token` 字段。
-  2. 保存更改。
+- 保留已有 `/home/feiyangdigitalbotconf/config.json`，不会删除你的配置。
+- 首次部署时下载空白 `config.json` 和 `bot.sql`。
+- 下载当前 fork 源码到 `/opt/mydigital-bot`。
+- 自动生成 `/opt/mydigital-bot/.env`，包含随机 MySQL 密码。
+- 默认把应用 HTTP 端口绑定到 `127.0.0.1:38455`，longPolling 模式下不会暴露公网。
 
-▶️ 运行机器人
-----------------
+## 配置机器人
 
-- 确保你的网络可以连接到 Telegram 服务器。如果使用软路由，请使用增强代理。
-- 在 `/home/feiyangdigitalbotconf/` 目录下执行：
+编辑：
+
 ```bash
-docker-compose up -d
+sudo nano /home/feiyangdigitalbotconf/config.json
 ```
 
-⏸️ 暂停容器
-------------
+至少填写：
 
-- 在 `/home/feiyangdigitalbotconf/` 目录下执行：
-```bash
-docker-compose stop
-```
-
-🔥 重启容器
-------------
-
-- 在 `/home/feiyangdigitalbotconf/` 目录下执行：
-```bash
-docker-compose restart
+```json
+{
+  "botConfig": {
+    "mode": "longPolling",
+    "name": "你的机器人用户名，不带 @",
+    "token": "BotFather 给你的 token",
+    "path": ""
+  }
+}
 ```
 
-🔍 查看日志
-------------
+`openAIApiKey`、`googleServiceAccount` 可以先留空。建议先启用关键词、正则、频道马甲、入群验证等本地规则，确认稳定后再开启 AI 审核，避免误封和 API 成本失控。
 
-在 `/home/feiyangdigitalbotconf/` 目录下执行：
+## 启动
+
 ```bash
-docker-compose logs -f 
+cd /opt/mydigital-bot
+sudo docker compose up -d --build
 ```
 
-🔄 更新
---------
+查看日志：
 
-在 `/home/feiyangdigitalbotconf/` 目录下进行以下操作：
-1.停止并移除卷：
 ```bash
-docker-compose down
+cd /opt/mydigital-bot
+sudo docker compose logs -f feiyangdigital-bot
 ```
-2.删除数据库持久卷（❗️危险操作，你需要对比本仓库里的数据库文件是否更新过，否则不要执行，删除之前请备份各种关键词文档）：
-- 首先备份数据库至`/home/`目录下
+
+停止：
+
 ```bash
-docker exec -it feiyangdigitalbotconf-mysql-1 mysqldump -uroot -ppassword bot  > /home/bot.sql
+cd /opt/mydigital-bot
+sudo docker compose stop
 ```
-- 删除数据库持久卷
+
+重启：
+
 ```bash
-docker volume rm feiyangdigitalbotconf_mysql-data
+cd /opt/mydigital-bot
+sudo docker compose restart
 ```
-3.拉取最新镜像：
+
+## 安全注意事项
+
+- 不要把填好 token/API key/Google 私钥的 `config.json` 提交到 GitHub。
+- `/opt/mydigital-bot/.env` 包含数据库密码，权限应保持 `600`。
+- 默认 `BOT_BIND_ADDR=127.0.0.1`，longPolling 模式不要改成 `0.0.0.0`。
+- 如果使用 webhook，必须配置 HTTPS 反向代理，并额外评估 `/feiyangdigitalbot` 接口暴露风险。
+- Bot 加入群组后只授予必要管理员权限：删除消息、封禁用户、限制用户即可。
+- AI 审核存在误判。建议先在小群或测试群观察，再放到主群。
+
+## 更新
+
+重新运行安装脚本会备份旧的 `/opt/mydigital-bot` 源码目录，但会保留 `/home/feiyangdigitalbotconf/config.json`。
+
 ```bash
-docker-compose pull  
+curl -fsSL -o start.sh https://raw.githubusercontent.com/sev7enshare/Mydigital-bot/main/start.sh
+chmod +x start.sh
+sudo ./start.sh
+cd /opt/mydigital-bot
+sudo docker compose up -d --build
 ```
-4.使用新镜像重新启动容器：
-```bash
-docker-compose up -d
-```
-5.在宿主机的`/etc/sysctl.conf`文件中添加或修改以下行并重启：
-```bash
-vm.overcommit_memory = 1
-```
+
+数据库卷不会被自动删除。删除 `mysql-data` 前必须先备份数据库。
