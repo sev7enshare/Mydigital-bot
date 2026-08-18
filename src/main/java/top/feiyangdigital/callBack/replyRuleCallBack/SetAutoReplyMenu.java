@@ -15,6 +15,8 @@ import java.util.List;
 @Component
 public class SetAutoReplyMenu {
 
+    private static final String RULE_DOC_URL = "https://github.com/sev7enshare/Mydigital-bot#群组规则格式";
+
     @Autowired
     private SendContent sendContent;
 
@@ -40,7 +42,7 @@ public class SetAutoReplyMenu {
         addRuleCacheMap.updateUserMapping(userId, addRuleCacheMap.getGroupIdForUser(userId), addRuleCacheMap.getGroupNameForUser(userId), "allow", addRuleCacheMap.getAiFlagForUser(userId), addRuleCacheMap.getCrontabFlagForUser(userId));
         List<String> keywordsButtons = new ArrayList<>();
         KeywordsFormat keywordsFormat = new KeywordsFormat();
-        keywordsButtons.add("🔎查看使用文档$$https://github.com/youshandefeiyang/feiyangdigital-bot");
+        keywordsButtons.add("🔎查看使用文档$$" + RULE_DOC_URL);
         keywordsButtons.add("◀️返回上一级##backToAutoReply");
         keywordsButtons.add("❌关闭菜单##closeMenu");
         keywordsFormat.setReplyText("当前群组：<b>" + addRuleCacheMap.getGroupNameForUser(userId) + "</b>\n当前群组ID：<b>" + addRuleCacheMap.getGroupIdForUser(userId) + "</b>\n当前可输入状态：<b>" + addRuleCacheMap.getKeywordsFlagForUser(userId) + "</b>\n⚡️请直接在输入框里输入需要添加的回复规则，\n规则必须满足要求，否则会添加失败⚡️️");
