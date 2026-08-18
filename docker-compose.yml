@@ -1,45 +1,59 @@
-version: '3'
+version: '3.8'
 
 services:
   feiyangdigital-bot:
-    image: youshandefeiyang/feiyangdigital-bot:latest # 使用您在DockerHub上的镜像
+    build:
+      context: .
+    image: sev7enshare/mydigital-bot:local
     ports:
-      - "38455:8080"
+      - "${BOT_BIND_ADDR:-127.0.0.1}:${BOT_HTTP_PORT:-38455}:8080"
     volumes:
-      - /home/feiyangdigitalbotconf/config.json:/app/config.json
+      - /home/feiyangdigitalbotconf/config.json:/app/config.json:ro
     restart: unless-stopped
     depends_on:
       - mysql
       - redis
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/bot?useSSL=false&serverTimezone=GMT&allowPublicKeyRetrieval=true
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-bot}?useSSL=false&serverTimezone=GMT&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${MYSQL_USER:-bot}
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
 
   mysql:
     image: mysql:8.0
     command:
       - --default-authentication-plugin=caching_sha2_password
-      - --skip-bind-address
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: bot
-      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-bot}
+      MYSQL_USER: ${MYSQL_USER:-bot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
     volumes:
       - mysql-data:/var/lib/mysql
-      - /home/feiyangdigitalbotconf/bot.sql:/docker-entrypoint-initdb.d/bot.sql
+      - /home/feiyangdigitalbotconf/bot.sql:/docker-entrypoint-initdb.d/bot.sql:ro
     restart: unless-stopped
 
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     command:
-      - --save 900 1
-      - --save 300 10
-      - --save 60 10000
-      - --rdbcompression yes
-      - --rdbchecksum yes
-      - --dbfilename dump.rdb
+      - redis-server
+      - --save
+      - "900"
+      - "1"
+      - --save
+      - "300"
+      - "10"
+      - --save
+      - "60"
+      - "10000"
+      - --rdbcompression
+      - "yes"
+      - --rdbchecksum
+      - "yes"
+      - --dbfilename
+      - dump.rdb
     volumes:
       - redis-data:/data
     restart: unless-stopped
