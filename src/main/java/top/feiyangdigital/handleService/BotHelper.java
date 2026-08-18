@@ -36,6 +36,9 @@ import java.util.List;
 
 @Service
 public class BotHelper {
+    public static final String PROJECT_URL = "https://github.com/sev7enshare/Mydigital-bot";
+    public static final String BOT_HOME_URL = "https://t.me/build_adblock_bot";
+    public static final String PROJECT_LINK_BUTTONS = "👨🏻‍💻仓库地址$$" + PROJECT_URL + "%%🤖机器人主页$$" + BOT_HOME_URL;
 
     @Autowired
     private NightSetting nightSetting;
@@ -119,7 +122,7 @@ public class BotHelper {
         keywordsButtons.add("📝规则设置##autoReply%%⚙️群组设置##groupSetting");
         keywordsButtons.add("🕐打开/关闭定时发送消息##cronOption%%🔮打开/关闭AI##aiOption");
         keywordsButtons.add("🌊防刷屏模式##antiFlood%%💎其他群组设置##otherGroupSetting");
-        keywordsButtons.add("👨🏻‍💻仓库地址$$https://github.com/youshandefeiyang/feiyangdigital-bot%%👥官方群组$$https://t.me/feiyangdigital");
+        keywordsButtons.add(PROJECT_LINK_BUTTONS);
         keywordsButtons.add("❌关闭菜单##closeMenu");
         keywordsFormat.setReplyText("当前群组：<b>" + addRuleCacheMap.getGroupNameForUser(userId) + "</b>\n当前群组ID：<b>" + addRuleCacheMap.getGroupIdForUser(userId) + "</b>\n当前可输入状态：<b>" + addRuleCacheMap.getKeywordsFlagForUser(userId) + "</b>\n当前定时发送消息状态：<b>" + addRuleCacheMap.getCrontabFlagForUser(userId) + "</b>\n当前AI状态：<b>" + addRuleCacheMap.getAiFlagForUser(userId) + "</b>\n⚡️请选择一个操作!⚡️");
         keywordsFormat.setKeywordsButtons(keywordsButtons);
@@ -261,7 +264,7 @@ public class BotHelper {
         if (callbackData.startsWith("adminUnmute")) {
             for (ChatMember admin : adminList.getAdmins(sender, callbackQuery.getMessage().getChatId().toString())) {
                 if ("GroupAnonymousBot".equals(callbackQuery.getFrom().getUserName()) || admin.getUser().getId().equals(callbackQuery.getFrom().getId())) {
-                    adminAllow.allow(sender, Long.valueOf(callbackData.substring(11)), callbackQuery.getMessage().getChatId().toString(), captchaManagerCacheMap.getMessageIdForUser(callbackData.substring(11), callbackQuery.getMessage().getChatId().toString()), answer, false);
+                    adminAllow.allow(sender, Long.valueOf(callbackData.substring(11)), callbackQuery.getMessage().getChatId().toString(), captchaManagerCacheMap.getMessageIdForUser(callbackData.substring(11), callbackQuery.getMessage().getChatId().toString()), answer, true);
                     return;
                 }
             }
@@ -270,33 +273,18 @@ public class BotHelper {
             return;
         }
 
-        if (callbackData.startsWith("floodInfoCount")) {
-            setFloodInfoCount.haddle(sender, update, true);
+        if (callbackData.startsWith("del")) {
+            deleteGropuRuleMap.deleteRuleByUUID(callbackData.substring(3));
+            DeleteGropuRuleMapEntity deleteGropuRuleMapEntity = deleteGropuRuleMap.getRuleByUUID(callbackData.substring(3));
+            answer.setText("✅已删除规则：" + deleteGropuRuleMapEntity.getRuleText());
+            sender.execute(answer);
+            return;
         }
 
-        if (callbackData.startsWith("floodTime")) {
-            setFloodTime.haddle(sender, update, true);
-        }
-
-        if (deleteGropuRuleMap.getGroupRuleMapSize() > 0) {
-            String chatId = deleteRuleCacheMap.getGroupIdForUser(update.getCallbackQuery().getFrom().getId().toString());
-            String longUuid = deleteGropuRuleMap.getAllRulesFromGroupId(chatId).getShortUuidToFullUuidMap().get(callbackData);
-            if (longUuid != null && callbackData.equals(longUuid.substring(0, 5))) {
-                DeleteGropuRuleMapEntity deleteGropuRuleMapEntity = new DeleteGropuRuleMapEntity(deleteGropuRuleMap);
-                GroupInfoWithBLOBs groupInfoWithBLOBs = new GroupInfoWithBLOBs();
-                groupInfoWithBLOBs.setKeywords(deleteGropuRuleMapEntity.removeRuleAndAssembleString(chatId, longUuid).trim());
-                if (groupInfoService.updateSelectiveByChatId(groupInfoWithBLOBs, chatId)) {
-                    GroupInfoWithBLOBs groupInfoWithBLOBs2 = groupInfoService.selAllByGroupId(addRuleCacheMap.getGroupIdForUser(update.getCallbackQuery().getFrom().getId().toString()));
-                    String groupName = groupInfoWithBLOBs2.getGroupname();
-                    String keyWords = groupInfoWithBLOBs2.getKeywords();
-                    if (StringUtils.hasText(keyWords)) {
-                        handleOption.ruleHandle(sender, addRuleCacheMap.getGroupIdForUser(update.getCallbackQuery().getFrom().getId().toString()), groupName, keyWords);
-                    }
-                    setDeleteView.deleteRuleSuccessCallBack(sender, update);
-                }
-
-            }
+        if (callbackData.startsWith("cancel")) {
+            deleteGropuRuleMap.cancelDeleteRuleByUUID(callbackData.substring(6));
+            answer.setText("❌已取消删除规则");
+            sender.execute(answer);
         }
     }
-
 }
