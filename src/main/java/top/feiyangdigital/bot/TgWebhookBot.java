@@ -47,7 +47,7 @@ public class TgWebhookBot extends TelegramWebhookBot {
 
     @Override
     public String getBotPath() {
-        return null;
+        return botPath;
     }
 
     public void setBotPath(String botPath) {
