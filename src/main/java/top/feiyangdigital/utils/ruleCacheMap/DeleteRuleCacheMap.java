@@ -13,10 +13,21 @@ public class DeleteRuleCacheMap {
     private final Map<String, String> userToDeleteKeywordFlagMap = new ConcurrentHashMap<>();
 
     public void updateUserMapping(String userId, String groupId, String groupName, String deleteKeywordFlag) {
-        // 每次都覆盖旧的数据，因为在任何时候，一个userId只与一个群组关联
-        userToGroupMap.put(userId, groupId);
-        userToGroupNameMap.put(userId, groupName);
-        userToDeleteKeywordFlagMap.put(userId, deleteKeywordFlag);
+        // ConcurrentHashMap does not allow null values. Remove unknown fields instead of throwing.
+        putOrRemove(userToGroupMap, userId, groupId);
+        putOrRemove(userToGroupNameMap, userId, groupName);
+        putOrRemove(userToDeleteKeywordFlagMap, userId, deleteKeywordFlag);
+    }
+
+    private void putOrRemove(Map<String, String> map, String key, String value) {
+        if (key == null) {
+            return;
+        }
+        if (value == null) {
+            map.remove(key);
+        } else {
+            map.put(key, value);
+        }
     }
 
     public String getGroupIdForUser(String userId) {
