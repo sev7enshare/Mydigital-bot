@@ -273,18 +273,39 @@ public class BotHelper {
             return;
         }
 
-        if (callbackData.startsWith("del")) {
-            deleteGropuRuleMap.deleteRuleByUUID(callbackData.substring(3));
-            DeleteGropuRuleMapEntity deleteGropuRuleMapEntity = deleteGropuRuleMap.getRuleByUUID(callbackData.substring(3));
-            answer.setText("✅已删除规则：" + deleteGropuRuleMapEntity.getRuleText());
-            sender.execute(answer);
+        if (tryDeleteRule(sender, update, callbackData, answer)) {
             return;
         }
+    }
 
-        if (callbackData.startsWith("cancel")) {
-            deleteGropuRuleMap.cancelDeleteRuleByUUID(callbackData.substring(6));
-            answer.setText("❌已取消删除规则");
+    private boolean tryDeleteRule(AbsSender sender, Update update, String callbackData, AnswerCallbackQuery answer) throws TelegramApiException {
+        CallbackQuery callbackQuery = update.getCallbackQuery();
+        String userId = callbackQuery.getFrom().getId().toString();
+        String groupId = deleteRuleCacheMap.getGroupIdForUser(userId);
+        if (!StringUtils.hasText(groupId)) {
+            return false;
+        }
+
+        DeleteGropuRuleMap.GroupRuleMappings mappings = deleteGropuRuleMap.getAllRulesFromGroupId(groupId);
+        if (mappings == null) {
+            return false;
+        }
+
+        String fullUuid = mappings.getFullUuidByShortUuid(callbackData);
+        if (!StringUtils.hasText(fullUuid)) {
+            return false;
+        }
+
+        GroupInfoWithBLOBs groupInfoWithBLOBs = new GroupInfoWithBLOBs();
+        DeleteGropuRuleMapEntity deleteGropuRuleMapEntity = new DeleteGropuRuleMapEntity(deleteGropuRuleMap);
+        groupInfoWithBLOBs.setKeywords(deleteGropuRuleMapEntity.removeRuleAndAssembleString(groupId, fullUuid));
+
+        if (groupInfoService.updateSelectiveByChatId(groupInfoWithBLOBs, groupId)) {
+            setDeleteView.deleteRuleSuccessCallBack(sender, update);
+        } else {
+            answer.setText("❌规则删除失败，请稍后重试");
             sender.execute(answer);
         }
+        return true;
     }
 }
