@@ -130,6 +130,20 @@ public class BotHelper {
     }
 
     public void handleCallbackQuery(AbsSender sender, Update update) throws TelegramApiException {
+        try {
+            handleCallbackQueryInternal(sender, update);
+        } catch (TelegramApiException e) {
+            if (!isMessageNotModified(e)) {
+                throw e;
+            }
+        }
+    }
+
+    private boolean isMessageNotModified(TelegramApiException e) {
+        return e.getMessage() != null && e.getMessage().contains("message is not modified");
+    }
+
+    private void handleCallbackQueryInternal(AbsSender sender, Update update) throws TelegramApiException {
         CallbackQuery callbackQuery = update.getCallbackQuery();
         String callbackData = callbackQuery.getData();
         if (callbackData == null || callbackData.isEmpty()) return;
