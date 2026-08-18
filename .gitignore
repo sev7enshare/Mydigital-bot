@@ -36,3 +36,12 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Runtime secrets ###
+.env
+.env.*
+!.env.example
+config.local.json
+config/production.json
+*service-account*.json
+google-credentials*.json
