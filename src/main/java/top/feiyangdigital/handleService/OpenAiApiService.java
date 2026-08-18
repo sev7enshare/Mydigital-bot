@@ -19,6 +19,8 @@ import java.util.List;
 @Service
 public class OpenAiApiService {
 
+    private static final String DEFAULT_API_HOST = "https://api.deepseek.com/";
+
     private static final String ANALYSIS_TEMPLATE = "你是一名聊天应用的群组管理员和垃圾信息检测器。你的任务是根据用户发言内容，判断其是否涉及垃圾广告、黄赌毒、引流、非法服务、虚拟货币交易、黑灰产、以及壮阳、性用品、迷药、夸张致富广告等内容。\n" +
             "请根据以下问题逐项进行详细判断：\n" +
             "1. **是否包含敏感关键词**：发言中是否提及以下关键词或相关变种词：区块链、虚拟货币（如比特币、以太坊等）、赚钱、黑产、灰产、赌博、色情、毒品、金融诈骗、个人隐私交易、洗钱、快速致富、暴富、提现、壮阳药、性用品、迷药等？\n" +
@@ -71,7 +73,7 @@ public class OpenAiApiService {
         return OpenAiClient.builder()
                 .apiKey(list)
                 .authInterceptor(new DynamicKeyOpenAiAuthInterceptor())
-                .apiHost("https://api.deepseek.com/")
+                .apiHost(getConfiguredApiHost())
                 .build();
     }
 
@@ -127,6 +129,16 @@ public class OpenAiApiService {
 
         String responseContent = choices.get(0).getMessage().getContent();
         return responseContent == null || responseContent.trim().isEmpty();
+    }
+
+    private String getConfiguredApiHost() {
+        String apiServer = BaseInfo.getApiServer();
+        if (apiServer == null || apiServer.trim().isEmpty()) {
+            return DEFAULT_API_HOST;
+        }
+
+        String normalized = apiServer.trim();
+        return normalized.endsWith("/") ? normalized : normalized + "/";
     }
 
     private String truncateString(String input, int maxLength) {
