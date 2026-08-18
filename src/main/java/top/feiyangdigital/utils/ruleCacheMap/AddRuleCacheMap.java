@@ -15,12 +15,23 @@ public class AddRuleCacheMap {
     private final Map<String,String> userToCrontabFlagMap = new ConcurrentHashMap<>();
 
     public void updateUserMapping(String userId, String groupId, String groupName, String keywordsFlag,String aiFlag,String crontabFlag) {
-        // 每次都覆盖旧的数据，因为在任何时候，一个userId只与一个群组关联
-        userToGroupMap.put(userId, groupId);
-        userToGroupNameMap.put(userId, groupName);
-        userToKeywordsFlagMap.put(userId, keywordsFlag);
-        userToAiFlagMap.put(userId,aiFlag);
-        userToCrontabFlagMap.put(userId,crontabFlag);
+        // ConcurrentHashMap does not allow null values. Remove unknown fields instead of throwing.
+        putOrRemove(userToGroupMap, userId, groupId);
+        putOrRemove(userToGroupNameMap, userId, groupName);
+        putOrRemove(userToKeywordsFlagMap, userId, keywordsFlag);
+        putOrRemove(userToAiFlagMap, userId, aiFlag);
+        putOrRemove(userToCrontabFlagMap, userId, crontabFlag);
+    }
+
+    private void putOrRemove(Map<String, String> map, String key, String value) {
+        if (key == null) {
+            return;
+        }
+        if (value == null) {
+            map.remove(key);
+        } else {
+            map.put(key, value);
+        }
     }
 
     public String getGroupIdForUser(String userId) {
