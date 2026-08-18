@@ -43,6 +43,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class CommonFunction {
+    private static final String PROJECT_URL = "https://github.com/sev7enshare/Mydigital-bot";
+    private static final String BOT_HOME_URL = "https://t.me/build_adblock_bot";
+
     private final Map<Long, Boolean> groupFlags = new ConcurrentHashMap<>();
 
     @Autowired
@@ -248,7 +251,7 @@ public class CommonFunction {
                         return;
                     }
                     aiCheckMedia.checkMedia(sender, update);
-                    clearOtherInfo.clearAdviceInfo(sender, update);
+                    clearAdviceInfo(sender, update);
                 }
             } catch (TelegramApiException e) {
                 throw new RuntimeException(e);
@@ -296,7 +299,7 @@ public class CommonFunction {
                         KeywordsFormat keywordsFormat = new KeywordsFormat();
                         keywordsButtons.add("➕将Bot加入群组$$" + url);
                         keywordsButtons.add("❌关闭菜单##close");
-                        keywordsFormat.setReplyText("<b>GitHub地址：</b><b><a href='https://github.com/youshandefeiyang/feiyangdigital-bot'>点击查看</a></b>\n<b>官方群组：</b><b><a href='https://t.me/feiyangdigital'>点击加入</a></b>\n");
+                        keywordsFormat.setReplyText("<b>GitHub地址：</b><b><a href='" + PROJECT_URL + "'>点击查看</a></b>\n<b>机器人主页：</b><b><a href='" + BOT_HOME_URL + "'>点击打开</a></b>\n");
                         keywordsFormat.setKeywordsButtons(keywordsButtons);
                         sender.execute((SendMessage) sendContent.createResponseMessage(update, keywordsFormat, "html"));
                     } else {
@@ -350,6 +353,10 @@ public class CommonFunction {
             }
         });
 
+    }
+
+    private void clearAdviceInfo(AbsSender sender, Update update) throws TelegramApiException {
+        clearOtherInfo.clearAdviceInfo(sender, update);
     }
 
 }
