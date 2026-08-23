@@ -75,6 +75,47 @@ cd /opt/mydigital-bot
 sudo docker compose restart
 ```
 
+## 广告学习模块
+
+文本 AI 审核内置广告学习缓存。它不会自动乱写永久规则，而是把 DeepSeek 已判定为广告的文本归一化后保存到 MySQL。下次遇到同样结构的广告时，机器人会直接本地删除，不再重复调用 DeepSeek。
+
+处理顺序：
+
+```text
+固定关键词/正则规则
+-> 本地广告学习缓存
+-> DeepSeek 判断未知文本
+-> DeepSeek 判为广告后写入缓存
+```
+
+归一化会把常见变量统一成模板：
+
+- 链接：`URL`
+- Telegram 用户名：`TGUSER`
+- 电话号码：`PHONE`
+- 空格、标点、大小写、全角半角差异会被压缩
+
+例如：
+
+```text
+点击下方链接五折买苹果 +91 6295 349 663
+```
+
+会形成类似模板：
+
+```text
+点击下方链接五折买苹果PHONE
+```
+
+缓存表 `ad_learning_sample` 会在应用启动时自动创建，现有 VPS 不需要手工导 SQL。你可以这样查看学习样本：
+
+```bash
+cd /opt/mydigital-bot
+sudo docker compose exec mysql mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SELECT id, spam_chance, hit_count, group_id, LEFT(sample_text, 80) AS sample FROM ad_learning_sample ORDER BY last_seen DESC LIMIT 20;"
+```
+
+注意：该模块只有在对应群组 AI 状态为 `open` 时工作。AI 关闭时不会调用 DeepSeek，也不会产生新的 AI 广告学习样本。
+
 ## 群组规则格式
 
 在群组里发送 `/setbot`，进入 `规则设置`，点击 `添加群组规则` 后，机器人会在 15 分钟内接受你输入的一条规则。手动添加时不要带系统自动生成的 UUID，也不要使用导出文件里的 `$$$` 前缀。
