@@ -74,6 +74,10 @@ public class AiCheckMessage {
         }
     }
 
+    public void contentAiOption(AbsSender sender, String groupId, String userId, String firstName, Integer messageId, String content) {
+        contentAiOption(sender, groupId, userId, firstName, messageId, content, content);
+    }
+
     public void contentAiOption(AbsSender sender, String groupId, String userId, String firstName, Integer messageId, String content, String rawText) {
         BotRecord botRecord = botRecordService.selBotRecordByGidAndUid(groupId, userId);
         if (botRecord != null) {
