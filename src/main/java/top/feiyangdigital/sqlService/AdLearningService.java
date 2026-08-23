@@ -23,7 +23,7 @@ public class AdLearningService {
     private static final Pattern URL_PATTERN = Pattern.compile("(?i)(https?://\\S+|t\\.me/\\w{3,})");
     private static final Pattern TG_USER_PATTERN = Pattern.compile("(?i)(?<![a-z0-9])@\\w{5,}");
     private static final Pattern PHONE_PATTERN = Pattern.compile("(?i)\\+?\\d[\\d\\s()\\-.]{6,}\\d");
-    private static final Pattern NOISE_PATTERN = Pattern.compile("[\\p{Punct}\\p{IsPunctuation}\\s]+");
+    private static final Pattern NOISE_PATTERN = Pattern.compile("[\\p{P}\\p{S}\\s]+");
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -115,9 +115,9 @@ public class AdLearningService {
         }
 
         String text = Normalizer.normalize(rawText, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
-        text = URL_PATTERN.matcher(text).replaceAll(" URL ");
-        text = TG_USER_PATTERN.matcher(text).replaceAll(" TGUSER ");
-        text = PHONE_PATTERN.matcher(text).replaceAll(" PHONE ");
+        text = URL_PATTERN.matcher(text).replaceAll(" url ");
+        text = TG_USER_PATTERN.matcher(text).replaceAll(" tguser ");
+        text = PHONE_PATTERN.matcher(text).replaceAll(" phone ");
         text = NOISE_PATTERN.matcher(text).replaceAll("");
         return text.trim();
     }
