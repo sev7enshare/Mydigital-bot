@@ -17,6 +17,7 @@ import top.feiyangdigital.entity.GroupInfoWithBLOBs;
 import top.feiyangdigital.entity.KeywordsFormat;
 import top.feiyangdigital.handleService.MessageHandle;
 import top.feiyangdigital.handleService.OpenAiApiService;
+import top.feiyangdigital.sqlService.AdLearningService;
 import top.feiyangdigital.sqlService.BotRecordService;
 import top.feiyangdigital.sqlService.GroupInfoService;
 import top.feiyangdigital.utils.MatchList;
@@ -50,13 +51,17 @@ public class AiCheckMessage {
     @Autowired
     private OpenAiApiService openAiApiService;
 
+    @Autowired
+    private AdLearningService adLearningService;
+
     public void checkMessage(AbsSender sender, Update update) throws TelegramApiException {
         String groupId = update.getMessage().getChatId().toString();
         String userId = update.getMessage().getFrom().getId().toString();
         Integer messageId = update.getMessage().getMessageId();
         String firstName = update.getMessage().getFrom().getFirstName();
         String userName = StrUtil.concat(true, firstName, update.getMessage().getFrom().getLastName());
-        String content = userName + "," + update.getMessage().getText();
+        String rawText = update.getMessage().getText();
+        String content = userName + "," + rawText;
         List<KeywordsFormat> keywordsFormatList = matchList.createBanKeyDeleteOptionList(update);
         if (keywordsFormatList != null) {
             if (messageHandle.processUserMessage(sender, update, keywordsFormatList)) {
@@ -65,11 +70,11 @@ public class AiCheckMessage {
         }
         GroupInfoWithBLOBs groupInfoWithBLOBs = groupInfoService.selAllByGroupId(groupId);
         if (groupInfoWithBLOBs != null && "open".equals(groupInfoWithBLOBs.getAiflag()) && StringUtils.hasText(content)) {
-            contentAiOption(sender, groupId, userId, firstName, messageId, content);
+            contentAiOption(sender, groupId, userId, firstName, messageId, content, rawText);
         }
     }
 
-    public void contentAiOption(AbsSender sender, String groupId, String userId, String firstName, Integer messageId, String content) {
+    public void contentAiOption(AbsSender sender, String groupId, String userId, String firstName, Integer messageId, String content, String rawText) {
         BotRecord botRecord = botRecordService.selBotRecordByGidAndUid(groupId, userId);
         if (botRecord != null) {
             Integer violationCount = botRecord.getViolationcount();
@@ -83,6 +88,21 @@ public class AiCheckMessage {
                 notification.setParseMode(ParseMode.HTML);
                 timerDelete.deleteMessageImmediatelyAndNotifyAfterDelay(sender, notification, groupId, messageId, Long.valueOf(userId), 90);
                 restrictOrUnrestrictUser.restrictUser(sender, Long.valueOf(userId), groupId, 0L);
+                return;
+            }
+            if (adLearningService.isKnownSpam(rawText)) {
+                String text = String.format("用户 <b><a href=\"tg://user?id=%d\">%s</a></b> 发送内容命中本地广告缓存，已删除。", Long.valueOf(userId), firstName);
+                String otherText = String.format("<b>违规用户UserID为：<a href=\"tg://user?id=%d\">%s</a></b>", Long.valueOf(userId), userId);
+                SendMessage notification = new SendMessage();
+                notification.setChatId(groupId);
+                notification.setText(text + "\n" + otherText);
+                notification.setParseMode(ParseMode.HTML);
+                timerDelete.deleteMessageImmediatelyAndNotifyAfterDelay(sender, notification, groupId, messageId, Long.valueOf(userId), 90);
+                adLearningService.recordKnownSpamHit(rawText, groupId, userId);
+                BotRecord botRecord1 = new BotRecord();
+                botRecord1.setViolationcount(violationCount + 1);
+                botRecord1.setLastmessage(content);
+                botRecordService.updateRecordByGidAndUid(groupId, userId, botRecord1);
                 return;
             } else if (normalCount >= 5) {
                 return;
@@ -115,6 +135,7 @@ public class AiCheckMessage {
                     notification.setText(text + "\n" + otherText);
                     notification.setParseMode(ParseMode.HTML);
                     timerDelete.deleteMessageImmediatelyAndNotifyAfterDelay(sender, notification, groupId, messageId, Long.valueOf(userId), 90);
+                    adLearningService.recordAiSpam(groupId, userId, rawText, spamChance, spamReason);
                     botRecord1.setViolationcount(violationCount + 1);
                 } else {
                     botRecord1.setNormalcount(normalCount + 1);
