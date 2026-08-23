@@ -71,6 +71,30 @@ CREATE TABLE `groupinfo`
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- 表的结构 `ad_learning_sample`
+--
+
+CREATE TABLE `ad_learning_sample`
+(
+    `id`              bigint       NOT NULL AUTO_INCREMENT,
+    `normalized_hash` char(64)     NOT NULL,
+    `normalized_text` varchar(1000) NOT NULL,
+    `sample_text`     text,
+    `group_id`        varchar(50)           DEFAULT NULL,
+    `user_id`         varchar(50)           DEFAULT NULL,
+    `spam_chance`     int          NOT NULL DEFAULT '0',
+    `spam_reason`     text,
+    `source`          varchar(50)  NOT NULL DEFAULT 'deepseek',
+    `hit_count`       int          NOT NULL DEFAULT '1',
+    `first_seen`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `last_seen`       timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_ad_learning_hash` (`normalized_hash`),
+    KEY `idx_ad_learning_chance` (`spam_chance`),
+    KEY `idx_ad_learning_last_seen` (`last_seen`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
 -- 转储表的索引
 --
 
