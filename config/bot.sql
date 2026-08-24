@@ -86,11 +86,19 @@ CREATE TABLE `ad_learning_sample`
     `spam_reason`     text,
     `source`          varchar(50)  NOT NULL DEFAULT 'deepseek',
     `hit_count`       int          NOT NULL DEFAULT '1',
+    `rule_status`     varchar(20)  NOT NULL DEFAULT 'pending',
+    `approved_rule`   text,
+    `suggested_count` int          NOT NULL DEFAULT '0',
+    `last_suggested`  timestamp    NULL     DEFAULT NULL,
+    `reviewed_at`     timestamp    NULL     DEFAULT NULL,
+    `reviewed_by`     varchar(50)           DEFAULT NULL,
     `first_seen`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `last_seen`       timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_ad_learning_hash` (`normalized_hash`),
     KEY `idx_ad_learning_chance` (`spam_chance`),
+    KEY `idx_ad_learning_rule_status` (`rule_status`),
+    KEY `idx_ad_learning_last_suggested` (`last_suggested`),
     KEY `idx_ad_learning_last_seen` (`last_seen`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
