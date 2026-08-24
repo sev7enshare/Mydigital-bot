@@ -103,6 +103,9 @@ public class BotHelper {
     @Autowired
     private FollowChannelVerification followChannelVerificationl;
 
+    @Autowired
+    private AdLearningRuleReviewService adLearningRuleReviewService;
+
     public void sendAdminButton(AbsSender sender, Update update) {
         String url = String.format("https://t.me/%s?start=_groupId%s", BaseInfo.getBotName(), update.getMessage().getChatId().toString());
         List<String> keywordsButtons = new ArrayList<>();
@@ -250,6 +253,16 @@ public class BotHelper {
             default:
         }
 
+        if (callbackData.startsWith("adLearnOk:")) {
+            handleAdLearningCallback(sender, update, callbackData, answer, true);
+            return;
+        }
+
+        if (callbackData.startsWith("adLearnNo:")) {
+            handleAdLearningCallback(sender, update, callbackData, answer, false);
+            return;
+        }
+
         if (callbackData.startsWith("adminUnrestrict")) {
 
             for (ChatMember admin : adminList.getAdmins(sender, callbackQuery.getMessage().getChatId().toString())) {
@@ -290,6 +303,45 @@ public class BotHelper {
         if (tryDeleteRule(sender, update, callbackData, answer)) {
             return;
         }
+    }
+
+    private void handleAdLearningCallback(AbsSender sender, Update update, String callbackData,
+                                          AnswerCallbackQuery answer, boolean approve) throws TelegramApiException {
+        CallbackQuery callbackQuery = update.getCallbackQuery();
+        if (!isCallbackFromGroupAdmin(sender, callbackQuery)) {
+            answer.setText("❌你无权执行该操作！");
+            sender.execute(answer);
+            return;
+        }
+
+        Long candidateId;
+        try {
+            candidateId = Long.valueOf(callbackData.substring(callbackData.indexOf(':') + 1));
+        } catch (NumberFormatException e) {
+            answer.setText("❌候选ID错误");
+            sender.execute(answer);
+            return;
+        }
+
+        if (approve) {
+            adLearningRuleReviewService.approveCandidate(sender, update, candidateId);
+            answer.setText("✅已加入规则");
+        } else {
+            adLearningRuleReviewService.ignoreCandidate(sender, update, candidateId);
+            answer.setText("✅已忽略");
+        }
+        sender.execute(answer);
+    }
+
+    private boolean isCallbackFromGroupAdmin(AbsSender sender, CallbackQuery callbackQuery) throws TelegramApiException {
+        String chatId = callbackQuery.getMessage().getChatId().toString();
+        for (ChatMember admin : adminList.getAdmins(sender, chatId)) {
+            if ("GroupAnonymousBot".equals(callbackQuery.getFrom().getUserName()) ||
+                    admin.getUser().getId().equals(callbackQuery.getFrom().getId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean tryDeleteRule(AbsSender sender, Update update, String callbackData, AnswerCallbackQuery answer) throws TelegramApiException {
