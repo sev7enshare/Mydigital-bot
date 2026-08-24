@@ -9,6 +9,7 @@ import org.telegram.telegrambots.meta.api.methods.groupadministration.BanChatMem
 import org.telegram.telegrambots.meta.api.methods.groupadministration.GetChatMember;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.UnbanChatMember;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.chatmember.ChatMember;
@@ -16,6 +17,7 @@ import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import top.feiyangdigital.entity.BaseInfo;
 import top.feiyangdigital.entity.KeywordsFormat;
+import top.feiyangdigital.sqlService.AdLearningService;
 import top.feiyangdigital.utils.CheckUser;
 import top.feiyangdigital.utils.SendContent;
 import top.feiyangdigital.utils.TimerDelete;
@@ -43,6 +45,9 @@ public class BanOrUnBan {
 
     @Autowired
     private CaptchaManagerCacheMap captchaManagerCacheMap;
+
+    @Autowired
+    private AdLearningService adLearningService;
 
     private void unBanFunc(AbsSender sender, Update update, Long userId, String firstName, String chatId) {
         if (unBanUserById(sender, userId, chatId)) {
@@ -131,6 +136,7 @@ public class BanOrUnBan {
                     Long userId = update.getMessage().getReplyToMessage().getFrom().getId();
                     String firstName = update.getMessage().getReplyToMessage().getFrom().getFirstName();
                     commonFunc(sender, update, userId, firstName, chatId, text, "reply");
+                    learnFromRepliedMessage(update, chatId, userId.toString(), "admin_ban");
                 }
                 sender.execute(new DeleteMessage(chatId, oldMessageId));
                 return true;
@@ -157,6 +163,7 @@ public class BanOrUnBan {
                     Long userId = update.getMessage().getReplyToMessage().getFrom().getId();
                     String firstName = update.getMessage().getReplyToMessage().getFrom().getFirstName();
                     Integer dbanMessageId = update.getMessage().getReplyToMessage().getMessageId();
+                    learnFromRepliedMessage(update, chatId, userId.toString(), "admin_dban");
                     sender.execute(new DeleteMessage(chatId, dbanMessageId));
                     commonFunc(sender, update, userId, firstName, chatId, text, "reply");
                 } else {
@@ -203,7 +210,7 @@ public class BanOrUnBan {
                     getChatMember.setChatId(chatId);
                     ChatMember chatMember = sender.execute(getChatMember);
                     String firstName = chatMember.getUser().getFirstName();
-                    unBanFunc(sender, update, userId, firstName, chatId);
+                    unBanFunc(sender, update, userId, firstName);
                 } else if (update.getMessage().getReplyToMessage() != null) {
                     Long userId = update.getMessage().getReplyToMessage().getFrom().getId();
                     String firstName = update.getMessage().getReplyToMessage().getFrom().getFirstName();
@@ -247,5 +254,22 @@ public class BanOrUnBan {
             log.error("解封用户失败，{}", e.getMessage(), e);
             return false;
         }
+    }
+
+    private void learnFromRepliedMessage(Update update, String chatId, String userId, String source) {
+        Message repliedMessage = update.getMessage().getReplyToMessage();
+        if (repliedMessage == null) {
+            return;
+        }
+
+        String sampleText = repliedMessage.getText();
+        if (!StringUtils.hasText(sampleText)) {
+            sampleText = repliedMessage.getCaption();
+        }
+        if (!StringUtils.hasText(sampleText)) {
+            return;
+        }
+
+        adLearningService.recordAiSpam(chatId, userId, sampleText, 10, source);
     }
 }
