@@ -111,8 +111,22 @@ sudo docker compose restart
 
 ```bash
 cd /opt/mydigital-bot
-sudo docker compose exec mysql sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SELECT id, spam_chance, hit_count, group_id, LEFT(sample_text, 80) AS sample FROM ad_learning_sample ORDER BY last_seen DESC LIMIT 20;"'
+sudo docker compose exec mysql sh -c 'mysql --default-character-set=utf8mb4 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SELECT id, spam_chance, source, rule_status, hit_count, group_id, LEFT(sample_text, 80) AS sample FROM ad_learning_sample ORDER BY last_seen DESC LIMIT 20;"'
 ```
+
+每天 09:30（Asia/Shanghai）机器人会把高频候选广告样本发到对应群里。触发条件：
+
+- `hit_count >= 3`
+- `spam_chance >= 8`
+- `rule_status = pending`
+- 每个群每天最多推送 5 条
+
+候选消息会带两个按钮：
+
+- `✅加入规则`：只有群管理员可点。确认后会把样本转换成静默删除规则，写入当前群 `keywords`，并立即刷新运行时规则。
+- `❌忽略`：只有群管理员可点。确认忽略后该样本标记为 `ignored`，不会继续每天反复推送。
+
+手动回复广告执行 `/ban` 或 `/dban` 时，机器人也会把被回复消息的文本或 caption 写入学习样本。纯图片且没有 caption 的广告暂时不会进入文本学习库。
 
 注意：该模块只有在对应群组 AI 状态为 `open` 时工作。AI 关闭时不会调用 DeepSeek，也不会产生新的 AI 广告学习样本。
 
