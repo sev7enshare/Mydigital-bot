@@ -135,8 +135,10 @@ public class BanOrUnBan {
                 } else if (update.getMessage().getReplyToMessage() != null) {
                     Long userId = update.getMessage().getReplyToMessage().getFrom().getId();
                     String firstName = update.getMessage().getReplyToMessage().getFrom().getFirstName();
+                    Integer banMessageId = update.getMessage().getReplyToMessage().getMessageId();
                     commonFunc(sender, update, userId, firstName, chatId, text, "reply");
                     learnFromRepliedMessage(update, chatId, userId.toString(), "admin_ban");
+                    deleteMessageQuietly(sender, chatId, banMessageId, "删除 /ban 回复的广告消息失败");
                 }
                 sender.execute(new DeleteMessage(chatId, oldMessageId));
                 return true;
@@ -164,7 +166,7 @@ public class BanOrUnBan {
                     String firstName = update.getMessage().getReplyToMessage().getFrom().getFirstName();
                     Integer dbanMessageId = update.getMessage().getReplyToMessage().getMessageId();
                     learnFromRepliedMessage(update, chatId, userId.toString(), "admin_dban");
-                    sender.execute(new DeleteMessage(chatId, dbanMessageId));
+                    deleteMessageQuietly(sender, chatId, dbanMessageId, "删除 /dban 回复的广告消息失败");
                     commonFunc(sender, update, userId, firstName, chatId, text, "reply");
                 } else {
                     timerDelete.sendTimedMessage(sender, sendContent.messageText(update, "你必须回复一条消息，才能执行此操作！"), 10);
@@ -271,5 +273,13 @@ public class BanOrUnBan {
         }
 
         adLearningService.recordManualSpam(chatId, userId, sampleText, source);
+    }
+
+    private void deleteMessageQuietly(AbsSender sender, String chatId, Integer messageId, String errorMessage) {
+        try {
+            sender.execute(new DeleteMessage(chatId, messageId));
+        } catch (TelegramApiException e) {
+            log.warn("{}，chatId={}, messageId={}, error={}", errorMessage, chatId, messageId, e.getMessage());
+        }
     }
 }
