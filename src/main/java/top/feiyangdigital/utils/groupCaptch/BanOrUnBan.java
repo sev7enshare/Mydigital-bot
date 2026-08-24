@@ -140,13 +140,13 @@ public class BanOrUnBan {
                     learnFromRepliedMessage(update, chatId, userId.toString(), "admin_ban");
                     deleteMessageQuietly(sender, chatId, banMessageId, "删除 /ban 回复的广告消息失败");
                 }
-                sender.execute(new DeleteMessage(chatId, oldMessageId));
+                deleteMessageQuietly(sender, chatId, oldMessageId, "删除 /ban 命令消息失败");
                 return true;
             }
         } else if (text.startsWith("!ban") || text.startsWith("!ban@" + BaseInfo.getBotName())
                 || text.startsWith("/ban") || text.startsWith("/ban@" + BaseInfo.getBotName())
         ) {
-            sender.execute(new DeleteMessage(chatId, oldMessageId));
+            deleteMessageQuietly(sender, chatId, oldMessageId, "删除非管理员 /ban 命令消息失败");
             return true;
         }
         return false;
@@ -171,13 +171,13 @@ public class BanOrUnBan {
                 } else {
                     timerDelete.sendTimedMessage(sender, sendContent.messageText(update, "你必须回复一条消息，才能执行此操作！"), 10);
                 }
-                sender.execute(new DeleteMessage(chatId, oldMessageId));
+                deleteMessageQuietly(sender, chatId, oldMessageId, "删除 /dban 命令消息失败");
                 return true;
             }
         } else if (text.startsWith("!dban") || text.startsWith("!dban@" + BaseInfo.getBotName())
                 || text.startsWith("/dban") || text.startsWith("/dban@" + BaseInfo.getBotName())
         ) {
-            sender.execute(new DeleteMessage(chatId, oldMessageId));
+            deleteMessageQuietly(sender, chatId, oldMessageId, "删除非管理员 /dban 命令消息失败");
             return true;
         }
         return false;
@@ -218,13 +218,13 @@ public class BanOrUnBan {
                     String firstName = update.getMessage().getReplyToMessage().getFrom().getFirstName();
                     unBanFunc(sender, update, userId, firstName, chatId);
                 }
-                sender.execute(new DeleteMessage(chatId, oldMessageId));
+                deleteMessageQuietly(sender, chatId, oldMessageId, "删除 /unban 命令消息失败");
                 return true;
             }
         } else if (text.startsWith("!unban") || text.startsWith("!unban@" + BaseInfo.getBotName())
                 || text.startsWith("/unban") || text.startsWith("/unban@" + BaseInfo.getBotName())
         ) {
-            sender.execute(new DeleteMessage(chatId, oldMessageId));
+            deleteMessageQuietly(sender, chatId, oldMessageId, "删除非管理员 /unban 命令消息失败");
             return true;
         }
         return false;
