@@ -131,7 +131,7 @@ public class AdLearningService {
     public AdLearningCandidate findCandidate(long id, String groupId) {
         List<AdLearningCandidate> candidates = jdbcTemplate.query(
                 "SELECT id, sample_text, normalized_text, group_id, user_id, spam_chance, spam_reason, source, hit_count, last_seen " +
-                        "FROM ad_learning_sample WHERE id = ? AND group_id = ?",
+                        "FROM ad_learning_sample WHERE id = ? AND group_id = ? AND rule_status = 'pending'",
                 (rs, rowNum) -> new AdLearningCandidate(
                         rs.getLong("id"),
                         rs.getString("sample_text"),
