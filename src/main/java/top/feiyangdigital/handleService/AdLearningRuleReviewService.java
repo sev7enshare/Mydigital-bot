@@ -164,7 +164,7 @@ public class AdLearningRuleReviewService {
         if (regex.length() < 6) {
             return "";
         }
-        return regex + "===>广告学习规则命中，已删除&&del=x=0";
+        return regex + "===广告学习规则命中，已删除&&del=x=0";
     }
 
     private void editCallbackMessage(AbsSender sender, Update update, String text) throws TelegramApiException {
