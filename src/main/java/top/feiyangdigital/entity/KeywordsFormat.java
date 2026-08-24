@@ -35,8 +35,13 @@ public class KeywordsFormat {
             } else if (action.startsWith("video=")) {
                 this.videoUrl = action.substring(6);
             } else if (action.startsWith("del=")) {
-                ruleMap.put("DeleteAfterXSeconds", action.substring(4).split("、")[0].split("=")[1]);
-                ruleMap.put("DeleteReplyAfterYSeconds", action.substring(4).split("、")[1].split("=")[1]);
+                String[] deleteOptions = action.substring(4).split("、");
+                if (deleteOptions.length >= 1 && deleteOptions[0].split("=").length == 2) {
+                    ruleMap.put("DeleteAfterXSeconds", deleteOptions[0].split("=")[1]);
+                }
+                if (deleteOptions.length >= 2 && deleteOptions[1].split("=").length == 2) {
+                    ruleMap.put("DeleteReplyAfterYSeconds", deleteOptions[1].split("=")[1]);
+                }
             } else if (action.startsWith("welcome=")){
                 ruleMap.put("DelWelcome",action.substring(8));
             } else if (action.startsWith("intoGroupBan=")) {
