@@ -210,7 +210,7 @@ public class BanOrUnBan {
                     getChatMember.setChatId(chatId);
                     ChatMember chatMember = sender.execute(getChatMember);
                     String firstName = chatMember.getUser().getFirstName();
-                    unBanFunc(sender, update, userId, firstName);
+                    unBanFunc(sender, update, userId, firstName, chatId);
                 } else if (update.getMessage().getReplyToMessage() != null) {
                     Long userId = update.getMessage().getReplyToMessage().getFrom().getId();
                     String firstName = update.getMessage().getReplyToMessage().getFrom().getFirstName();
@@ -270,6 +270,6 @@ public class BanOrUnBan {
             return;
         }
 
-        adLearningService.recordAiSpam(chatId, userId, sampleText, 10, source);
+        adLearningService.recordManualSpam(chatId, userId, sampleText, source);
     }
 }
