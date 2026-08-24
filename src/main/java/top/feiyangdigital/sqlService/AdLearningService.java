@@ -84,28 +84,39 @@ public class AdLearningService {
 
     @Transactional
     public void recordAiSpam(String groupId, String userId, String rawText, Integer spamChance, String spamReason) {
+        recordSpam(groupId, userId, rawText, spamChance, spamReason, "deepseek");
+    }
+
+    @Transactional
+    public void recordManualSpam(String groupId, String userId, String rawText, String source) {
+        recordSpam(groupId, userId, rawText, 10, source, source);
+    }
+
+    private void recordSpam(String groupId, String userId, String rawText, Integer spamChance, String spamReason, String source) {
         String normalized = normalize(rawText);
         if (!StringUtils.hasText(normalized) || normalized.length() < MIN_NORMALIZED_LENGTH) {
             return;
         }
 
         int chance = spamChance == null ? 0 : spamChance;
+        String sampleSource = StringUtils.hasText(source) ? source : "manual";
         jdbcTemplate.update(
                 "INSERT INTO ad_learning_sample " +
                         "(normalized_hash, normalized_text, sample_text, group_id, user_id, spam_chance, spam_reason, source, hit_count) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, 'deepseek', 1) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1) " +
                         "ON DUPLICATE KEY UPDATE " +
                         "hit_count = hit_count + 1, last_seen = CURRENT_TIMESTAMP, " +
                         "spam_chance = GREATEST(spam_chance, VALUES(spam_chance)), " +
                         "spam_reason = VALUES(spam_reason), sample_text = VALUES(sample_text), " +
-                        "group_id = VALUES(group_id), user_id = VALUES(user_id)",
+                        "source = VALUES(source), group_id = VALUES(group_id), user_id = VALUES(user_id)",
                 sha256(normalized),
                 truncate(normalized, 1000),
                 truncate(rawText, 4000),
                 groupId,
                 userId,
                 chance,
-                truncate(spamReason, 2000)
+                truncate(spamReason, 2000),
+                truncate(sampleSource, 50)
         );
     }
 
