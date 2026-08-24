@@ -114,7 +114,7 @@ cd /opt/mydigital-bot
 sudo docker compose exec mysql sh -c 'mysql --default-character-set=utf8mb4 -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "SELECT id, spam_chance, source, rule_status, hit_count, group_id, LEFT(sample_text, 80) AS sample FROM ad_learning_sample ORDER BY last_seen DESC LIMIT 20;"'
 ```
 
-每天 09:30（Asia/Shanghai）机器人会把高频候选广告样本发到对应群里。触发条件：
+应用启动完成后会先推送一次候选规则；之后每天 09:30（Asia/Shanghai）机器人会把高频候选广告样本发到对应群里。触发条件：
 
 - `hit_count >= 3`
 - `spam_chance >= 8`
