@@ -20,6 +20,7 @@ import top.feiyangdigital.handleService.OpenAiApiService;
 import top.feiyangdigital.sqlService.AdLearningService;
 import top.feiyangdigital.sqlService.BotRecordService;
 import top.feiyangdigital.sqlService.GroupInfoService;
+import top.feiyangdigital.utils.CheckUser;
 import top.feiyangdigital.utils.MatchList;
 import top.feiyangdigital.utils.TimerDelete;
 import top.feiyangdigital.utils.groupCaptch.RestrictOrUnrestrictUser;
@@ -63,7 +64,13 @@ public class AiCheckMessage {
     @Autowired
     private AdLearningService adLearningService;
 
+    @Autowired
+    private CheckUser checkUser;
+
     public void checkMessage(AbsSender sender, Update update) throws TelegramApiException {
+        if (checkUser.isGroupAdmin(sender, update)) {
+            return;
+        }
         String groupId = update.getMessage().getChatId().toString();
         String userId = update.getMessage().getFrom().getId().toString();
         Integer messageId = update.getMessage().getMessageId();

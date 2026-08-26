@@ -19,6 +19,7 @@ import top.feiyangdigital.entity.GroupInfoWithBLOBs;
 import top.feiyangdigital.handleService.GoogleCloudVisionService;
 import top.feiyangdigital.sqlService.BotRecordService;
 import top.feiyangdigital.sqlService.GroupInfoService;
+import top.feiyangdigital.utils.CheckUser;
 import top.feiyangdigital.utils.TimerDelete;
 import top.feiyangdigital.utils.groupCaptch.RestrictOrUnrestrictUser;
 
@@ -47,7 +48,13 @@ public class AiCheckMedia {
     @Autowired
     private AiCheckMessage aiCheckMessage;
 
+    @Autowired
+    private CheckUser checkUser;
+
     public void checkMedia(AbsSender sender, Update update) throws TelegramApiException {
+        if (checkUser.isGroupAdmin(sender, update)) {
+            return;
+        }
         String groupId = update.getMessage().getChatId().toString();
         String userId = update.getMessage().getFrom().getId().toString();
         Integer messageId = update.getMessage().getMessageId();
