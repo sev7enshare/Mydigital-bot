@@ -15,6 +15,7 @@ import top.feiyangdigital.entity.GroupInfoWithBLOBs;
 import top.feiyangdigital.scheduledTasks.HandleOption;
 import top.feiyangdigital.sqlService.AdLearningService;
 import top.feiyangdigital.sqlService.GroupInfoService;
+import top.feiyangdigital.utils.TimerDelete;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,7 @@ public class AdLearningRuleReviewService {
     private static final int MIN_SPAM_CHANCE = 8;
     private static final int MAX_TOTAL_CANDIDATES = 50;
     private static final int MAX_GROUP_CANDIDATES = 5;
+    private static final int REVIEW_RESULT_DELETE_SECONDS = 60;
 
     @Autowired
     private AdLearningService adLearningService;
@@ -41,6 +43,9 @@ public class AdLearningRuleReviewService {
 
     @Autowired
     private HandleOption handleOption;
+
+    @Autowired
+    private TimerDelete timerDelete;
 
     public int sendDailyCandidates(AbsSender sender) {
         List<AdLearningService.AdLearningCandidate> candidates =
@@ -180,6 +185,12 @@ public class AdLearningRuleReviewService {
         editMessageText.setParseMode("HTML");
         editMessageText.setText(text);
         sender.execute(editMessageText);
+        timerDelete.deleteMessageByMessageIdDelay(
+                sender,
+                update.getCallbackQuery().getMessage().getChatId().toString(),
+                update.getCallbackQuery().getMessage().getMessageId(),
+                REVIEW_RESULT_DELETE_SECONDS
+        );
     }
 
     private String shorten(String text, int maxLength) {
