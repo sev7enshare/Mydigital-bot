@@ -1,12 +1,17 @@
-# Mydigital-bot Telegram 群管机器人
+# Mydigital-bot
 
-这是从 `youshandefeiyang/feiyangdigital-bot` fork 后整理的自用部署版本。项目基于 Spring Boot、Telegrambot API、MySQL、Redis，可用于 Telegram 群组管理、关键词/正则处理、入群验证、频道马甲广告拦截、刷屏检测，并可选接入 DeepSeek 与 Google Cloud Vision 做 AI 文本和媒体审核。
+基于 Spring Boot、TelegramBots API、MySQL、Redis 和 Docker Compose 的 Telegram 群管机器人。项目支持关键词/正则规则、入群验证、频道马甲广告拦截、刷屏检测、管理员封禁/解封、DeepSeek 文本审核、本地广告学习缓存，以及“每日候选规则 + 管理员按钮确认”的半自动规则沉淀流程。媒体审核可选接入 Google Cloud Vision。
+
+- 机器人主页：[@build_adblock_bot](https://t.me/build_adblock_bot)
+- 官方群组：[@build_adblock](https://t.me/build_adblock)
+
+本仓库是从 `youshandefeiyang/feiyangdigital-bot` fork 后维护的自托管版本，重点面向 Telegram 群组广告拦截和长期规则运营。
 
 ## 部署方式
 
 推荐直接部署在 VPS 上，用 Docker Compose 运行。默认使用 `longPolling` 模式，不需要域名，不需要公网 webhook，只要服务器能访问 Telegram API 即可。
 
-你的 OVH SG VPS 配置足够运行本项目。首次建议只开放 SSH，不要把机器人 HTTP 端口暴露到公网。
+首次部署建议只开放 SSH，不要把机器人 HTTP 端口暴露到公网。默认配置会把应用 HTTP 端口绑定到 `127.0.0.1:38455`。
 
 ## 一键准备
 
