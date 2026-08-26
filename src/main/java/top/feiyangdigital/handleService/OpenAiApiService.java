@@ -62,7 +62,7 @@ public class OpenAiApiService {
             "请根据以上问题逐一判断，并以如下JSON格式返回结果：\n" +
             "{\n" +
             "\"spamChance\": <垃圾广告的可能性，范围为\"0\"-\"10\">,\n" +
-            "\"spamReason\": \"<你判断该发言是否为垃圾广告或违法内容的原因>\"\n" +
+            "\"spamReason\": \"<你判断该发言是否为垃圾广告或违法内容的原因，80个汉字以内>\"\n" +
             "}\n" +
             "只输出合法 json，不要任何多余文本。";
 
@@ -83,7 +83,7 @@ public class OpenAiApiService {
 
         while (attempt < MAX_RETRIES) {
             try {
-                String content = String.format(ANALYSIS_TEMPLATE, truncateString(text, 200));
+                String content = String.format(ANALYSIS_TEMPLATE, truncateString(text, 800));
                 Message message = Message.builder().role(Message.Role.SYSTEM).content(content).build();
                 ChatCompletion chatCompletion = createChatCompletion(message);
                 List<ChatChoice> choices = createOpenAiClient().chatCompletion(chatCompletion).getChoices();
@@ -107,7 +107,7 @@ public class OpenAiApiService {
     private ChatCompletion createChatCompletion(Message message) {
         DeepSeekChatCompletion chatCompletion = new DeepSeekChatCompletion();
         chatCompletion.setModel(BaseInfo.getOpenAIModel());
-        chatCompletion.setMaxTokens(1000);
+        chatCompletion.setMaxTokens(300);
         chatCompletion.setTemperature(0.2);
         chatCompletion.setTopP(1.0);
         chatCompletion.setPresencePenalty(0);

@@ -42,10 +42,13 @@ public class AdLearningRuleReviewService {
     @Autowired
     private HandleOption handleOption;
 
-    public void sendDailyCandidates(AbsSender sender) {
+    public int sendDailyCandidates(AbsSender sender) {
         List<AdLearningService.AdLearningCandidate> candidates =
                 adLearningService.listPendingRuleCandidates(MIN_HIT_COUNT, MIN_SPAM_CHANCE, MAX_TOTAL_CANDIDATES);
         Map<String, Integer> sentByGroup = new LinkedHashMap<>();
+        int sentCount = 0;
+
+        log.info("广告学习候选规则扫描完成，pendingCandidates={}", candidates.size());
 
         for (AdLearningService.AdLearningCandidate candidate : candidates) {
             int groupSent = sentByGroup.getOrDefault(candidate.getGroupId(), 0);
@@ -57,11 +60,14 @@ public class AdLearningRuleReviewService {
                 sender.execute(buildCandidateMessage(candidate));
                 adLearningService.markCandidateSuggested(candidate.getId());
                 sentByGroup.put(candidate.getGroupId(), groupSent + 1);
+                sentCount++;
             } catch (TelegramApiException e) {
                 log.warn("发送广告学习候选规则失败，groupId={}, sampleId={}, error={}",
                         candidate.getGroupId(), candidate.getId(), e.getMessage());
             }
         }
+        log.info("广告学习候选规则发送完成，sentCandidates={}, groups={}", sentCount, sentByGroup.keySet());
+        return sentCount;
     }
 
     public void approveCandidate(AbsSender sender, Update update, long candidateId) throws TelegramApiException {
