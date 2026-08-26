@@ -50,7 +50,7 @@ sudo nano /home/feiyangdigitalbotconf/config.json
 }
 ```
 
-`openAIApiKey`、`googleServiceAccount` 可以先留空。建议先启用关键词、正则、频道马甲、入群验证等本地规则，确认稳定后再开启 AI 审核，避免误封和 API 成本失控。
+`openAIApiKey`、`googleServiceAccount` 可以先留空。`openAIApiKey` 用于 DeepSeek 文本审核，`googleServiceAccount` 用于 Google Cloud Vision 图片 OCR 和 SafeSearch 媒体审核。建议先启用关键词、正则、频道马甲、入群验证等本地规则，确认稳定后再开启 AI 审核，避免误封和 API 成本失控。
 
 ## 启动
 
@@ -135,6 +135,53 @@ sudo docker compose exec mysql sh -c 'mysql --default-character-set=utf8mb4 -u"$
 
 注意：该模块只有在对应群组 AI 状态为 `open` 时工作。AI 关闭时不会调用 DeepSeek，也不会产生新的 AI 广告学习样本。
 
+## 媒体审核与 Google Cloud Vision
+
+媒体审核用于处理图片、视频缩略图、文档缩略图、贴纸缩略图中的广告文字或违规画面。机器人会先从 Telegram 下载可识别的媒体文件，再调用 Google Cloud Vision：
+
+```text
+Telegram 媒体文件
+-> Google Vision OCR 识别图片文字
+-> Google Vision SafeSearch 判断成人/暴力/擦边风险
+-> 将 OCR 文本和 caption 交给本地规则/广告缓存/DeepSeek 继续判断
+```
+
+配置 `googleServiceAccount` 前，需要在 Google Cloud 中完成：
+
+- 创建或选择一个 Google Cloud 项目。
+- 启用 `Cloud Vision API`。
+- 创建 Service Account，并生成 JSON key。
+- 把 JSON key 内容填入 `/home/feiyangdigitalbotconf/config.json` 的 `googleServiceAccount` 字段。
+- 确认该项目已开通必要的结算或免费额度，否则 Google API 可能返回权限或计费错误。
+
+配置完成后重启机器人：
+
+```bash
+cd /opt/mydigital-bot
+sudo docker compose restart feiyangdigital-bot
+sudo docker compose logs -f feiyangdigital-bot
+```
+
+发一张带文字的测试图片后，日志中出现以下内容即表示媒体识别链路已打通：
+
+```text
+媒体AI检测：Telegram文件下载成功
+媒体AI检测：Google Vision OCR完成
+媒体AI检测：Google Vision SafeSearch完成
+```
+
+如果日志出现 `PERMISSION_DENIED`，通常表示当前 Service Account 所属项目没有启用 Cloud Vision API，或 API 刚启用还在传播中。请核对日志里的项目编号是否和 Google Cloud 顶部当前项目一致。
+
+成本说明：Google Cloud Vision 不是按 token 计费，而是按图片功能请求计费。当前媒体检测通常会对一张图片调用 OCR 和 SafeSearch 两类检测。低活跃群组成本一般可控；如果群里大量发送图片、贴纸或动图，建议观察 Google Cloud 指标和费用。
+
+当前默认行为：
+
+- 普通图片会进入 OCR/SafeSearch。
+- 图片或视频的 `caption` 会作为文本一起参与审核。
+- 视频、文档、贴纸主要识别 Telegram 提供的 `thumbnail` 缩略图。
+- GIF/animation 暂未作为完整动图逐帧识别。
+- 群管理员的文本和媒体消息默认跳过 AI 审核，避免客服回复被误删。
+
 ## 群组规则格式
 
 在群组里发送 `/setbot`，进入 `规则设置`，点击 `添加群组规则` 后，机器人会在 15 分钟内接受你输入的一条规则。手动添加时不要带系统自动生成的 UUID，也不要使用导出文件里的 `$$$` 前缀。
@@ -193,6 +240,7 @@ $$$关键词1&&&关键词2|||关键词3===>回复内容
 - 如果使用 webhook，必须配置 HTTPS 反向代理，并额外评估 `/feiyangdigitalbot` 接口暴露风险。
 - Bot 加入群组后只授予必要管理员权限：删除消息、封禁用户、限制用户即可。
 - AI 审核存在误判。建议先在小群或测试群观察，再放到主群。
+- Google Cloud Vision、DeepSeek 等第三方 API 都可能产生费用，应定期查看用量和账单。
 
 ## 更新
 
@@ -203,7 +251,7 @@ curl -fsSL -o start.sh https://raw.githubusercontent.com/sev7enshare/Mydigital-b
 chmod +x start.sh
 sudo ./start.sh
 cd /opt/mydigital-bot
-sudo docker compose up -d --build
+sudo docker compose up -d --build --force-recreate
 ```
 
 数据库卷不会被自动删除。删除 `mysql-data` 前必须先备份数据库。
