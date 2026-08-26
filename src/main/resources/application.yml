@@ -14,6 +14,7 @@ spring:
 logging:
   level:
     root: warn
+    top.feiyangdigital: info
 
 mybatis:
   type-aliases-package: top.feiyangdigital.entity
