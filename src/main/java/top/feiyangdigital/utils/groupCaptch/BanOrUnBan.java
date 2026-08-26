@@ -85,7 +85,7 @@ public class BanOrUnBan {
         }
         if (banUserById(sender, userId, chatId, secondsToAdd)) {
             KeywordsFormat keywordsFormat = new KeywordsFormat();
-            String text1 = String.format("用户 <b><a href=\"tg://user?id=%d\">%s</a></b> 已被管理员封禁。", userId, firstName);
+            String text1 = String.format("用户 <b><a href=\"tg://user?id=%d\">%s</a></b> 已被管理员封禁并移出群组。", userId, firstName);
             if (StringUtils.hasText(banReason)) {
                 text1 += "\n" + String.format("封禁原因：<b>%s</b>！", banReason);
             }
@@ -235,7 +235,10 @@ public class BanOrUnBan {
         BanChatMember banChatMember = new BanChatMember();
         banChatMember.setChatId(chatId);
         banChatMember.setUserId(userId);
-        banChatMember.setUntilDateDateTime(ZonedDateTime.now().plusSeconds(secondsToAdd));
+        banChatMember.setRevokeMessages(true);
+        if (secondsToAdd != null && secondsToAdd > 30L) {
+            banChatMember.setUntilDateDateTime(ZonedDateTime.now().plusSeconds(secondsToAdd));
+        }
         try {
             sender.execute(banChatMember);
             return true;
