@@ -38,7 +38,9 @@ public class AiCheckMessage {
     private static final Pattern JSON_OBJECT_PATTERN = Pattern.compile("\\{[\\s\\S]*}");
     private static final Pattern SPAM_CHANCE_PATTERN = Pattern.compile("(?i)\"?spamChance\"?\\s*:\\s*\"?(\\d{1,2})");
     private static final Pattern CONTACT_OR_LINK_PATTERN = Pattern.compile("(?i)(https?://|t\\.me/|telegram:|line\\.me/|@\\w{5,}|startapp=)");
-    private static final Pattern OBVIOUS_AD_PATTERN = Pattern.compile("(?i)(gv|google\\s*voice|linkedin|2fa|ck|账号|接码|虚拟卡|信用卡|供出|出售|联系|contact|裸聊|美女|hot|v1d|视频|商务|business|广告|成本低|引流|line|telegram)");
+    private static final Pattern HIGH_RISK_AD_PATTERN = Pattern.compile("(?i)(\\bgv\\b|google\\s*voice|linkedin|2fa|\\bck\\b|接码|虚拟卡|信用卡|裸聊|美女|hot|v1d|色情|成人|赌博|博彩|洗钱|代付)");
+    private static final Pattern SALES_INTENT_PATTERN = Pattern.compile("(?i)(出售|售卖|供出|出号|接单|商家|收款码|商务|business|广告|成本低|引流|私聊|加我|联系|contact|telegram|line)");
+    private static final Pattern BENIGN_SERVICE_PATTERN = Pattern.compile("(?i)(签到|checkin|随机流量|每日流量|获取\\s*\\d+\\s*-\\s*\\d+\\s*(mb|mib|gb|gib)|绑定本站账号|未绑定本站账号|套餐入口|节点|订阅|客户端|线路|域名被墙|换\\s*ip|自动更换\\s*ip)");
 
     @Autowired
     private TimerDelete timerDelete;
@@ -209,7 +211,16 @@ public class AiCheckMessage {
             return false;
         }
         String normalized = Normalizer.normalize(content, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
-        return CONTACT_OR_LINK_PATTERN.matcher(normalized).find() && OBVIOUS_AD_PATTERN.matcher(normalized).find();
+        if (!CONTACT_OR_LINK_PATTERN.matcher(normalized).find()) {
+            return false;
+        }
+        boolean hasHighRiskTerm = HIGH_RISK_AD_PATTERN.matcher(normalized).find();
+        boolean hasSalesIntent = SALES_INTENT_PATTERN.matcher(normalized).find();
+        boolean isBenignServiceMessage = BENIGN_SERVICE_PATTERN.matcher(normalized).find();
+        if (isBenignServiceMessage && !hasHighRiskTerm && !hasSalesIntent) {
+            return false;
+        }
+        return hasHighRiskTerm || hasSalesIntent;
     }
 
     private String safeReason(String reason) {
